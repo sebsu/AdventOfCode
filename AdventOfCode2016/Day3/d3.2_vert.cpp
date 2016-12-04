@@ -37,19 +37,16 @@ int main(){
             if (tri1[0]+tri1[1] > tri1[2] &&
                 tri1[0]+tri1[2] > tri1[1] &&
                 tri1[1]+tri1[2] > tri1[0]){
-                //                cout << tri1[0] << " " << tri1[1] << " " << tri1[2] << endl;
                 ++numTri;
             }
             if (tri2[0]+tri2[1] > tri2[2] &&
                 tri2[0]+tri2[2] > tri2[1] &&
                 tri2[1]+tri2[2] > tri2[0]){
-                //cout << tri2[0] << " " << tri2[1] << " " << tri2[2] << endl;
                 ++numTri;
             }
             if (tri3[0]+tri3[1] > tri3[2] &&
                 tri3[0]+tri3[2] > tri3[1] &&
                 tri3[1]+tri3[2] > tri3[0]){
-                //cout << tri3[0] << " " << tri3[1] << " " << tri3[2] << endl;
                 ++numTri;
             }
         }
