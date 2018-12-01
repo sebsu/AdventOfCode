@@ -3,7 +3,6 @@
 //#include <stdlib.h>
 //#include <stdio.h>
 #include <string>
-#include <vector>
 
 using namespace std;
 
@@ -70,7 +69,7 @@ int main(){
 
         // Add to the total count if the checksum is correct
         if (verify.compare(checksum) == 0){
-            if (rotatedName.find("north")!=-1 && rotatedName.find("pole")!=-1){
+            if (rotatedName.find("north")!=string::npos && rotatedName.find("pole")!=string::npos){
                 roomId = id;
                 roomName = rotatedName;
             }

@@ -22,7 +22,7 @@ int main(){
         string checksum = instrLine.substr(instrLine.find_first_of("[")+1, 5);
 
         // Save the number of letters
-        for (int i=0; i<name.length(); ++i){
+        for (unsigned int i=0; i<name.length(); ++i){
             if (name[i]=='-')
                 continue;
             alphabet[name[i]-97] += 1;
