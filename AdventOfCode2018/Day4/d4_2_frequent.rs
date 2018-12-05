@@ -40,11 +40,11 @@ fn main() {
     let mut amount = 0;
     let mut minute = 0;
     for guard in sleeping_schedule.keys() {
-        let max = max_array(*sleeping_schedule.get(guard).expect("No guard?"));
+        let (max, index) = max_array(*sleeping_schedule.get(guard).expect("No guard?"));
         if max > amount {
             sleepiest = *guard;
             amount = max;
-            minute = max_array_index(*sleeping_schedule.get(guard).expect("No guard?"));
+            minute = index;
         }
     }
     println!("Guard: {}. Minute: {}. Amount: {}.Hash: {}", sleepiest, minute, amount, sleepiest*minute);
@@ -61,17 +61,7 @@ fn main() {
 //     sum
 // }
 
-fn max_array(arr: [u32; 60]) -> u32 {
-    let mut max = 0;
-    for i in 0..60 {
-        if max < arr[i] {
-            max = arr[i];
-        }
-    }
-    max
-}
-
-fn max_array_index(arr: [u32; 60]) -> u32 {
+fn max_array(arr: [u32; 60]) -> (u32, u32) {
     let mut max = 0;
     let mut index = 0;
     for i in 0..60 {
@@ -80,7 +70,7 @@ fn max_array_index(arr: [u32; 60]) -> u32 {
             index = i;
         }
     }
-    index as u32
+    (max, index as u32)
 }
 
 fn get_guard(e: &str) -> u32 {
