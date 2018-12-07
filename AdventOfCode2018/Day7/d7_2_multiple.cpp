@@ -36,17 +36,17 @@ int main() {
         }
     }
     
-    for (auto pair : steps) {
-        std::cout << pair.first << ": ";
-        std::vector<char> deps = pair.second;
-        for (char dep : deps) {
-            std::cout << dep << " ";
-        }
-        std::cout << std::endl;
-    }
+    // for (auto pair : steps) {
+    //     std::cout << pair.first << ": ";
+    //     std::vector<char> deps = pair.second;
+    //     for (char dep : deps) {
+    //         std::cout << dep << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
-    int nWorkers = 2;
-    int duration = 0;
+    int nWorkers = 5;
+    int duration = 60;
     std::string res = "";
     std::vector<int> workers(nWorkers, 0);
     std::vector<char> taken(nWorkers, '.');
@@ -55,15 +55,20 @@ int main() {
 
     while (!isDone) {
         time++;
-        std::cout << res << std::endl << time << "\t";
+
+        // std::cout << res << std::endl << time << "\t";
         for (int i=0; i<nWorkers; ++i) {
-            if (workers[i]-- <= 0) {
+            if (workers[i] <= 0) {
                 if (taken[i] != '.') {
                     res = res + taken[i];
                     cleanSteps(&steps, taken[i]);
                 }
-            } else {
-                std::cout << taken[i] << " ";
+            }
+        }
+
+        for (int i=0; i<nWorkers; ++i) {
+            if (workers[i]-- > 0) {
+                // std::cout << taken[i] << " ";
                 continue;
             }
             taken[i] = '.';
@@ -104,7 +109,7 @@ int main() {
             if (steps.size() < 1) {
                 isDone = true;
             }
-            std::cout << taken[i] << " ";
+            // std::cout << taken[i] << " ";
         }
     }
 
