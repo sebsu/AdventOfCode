@@ -23,9 +23,8 @@ typedef struct node{
 int insert(node* root, int val) {
     node* prev = NULL;
     node* curr = root;
-    while (curr->next != NULL &&
-           curr->data < val &&
-           curr->data != val) {
+    while (curr->data < val && 
+           curr->next != NULL) {
         prev = curr;
         curr = curr->next;
     }
