@@ -36,7 +36,7 @@ int read_wire(char *str, struct point *wire) {
   struct point p = {0, 0};
   wire[i] = p;
   while (pos < len) {
-    dist = stoi(str, len, &pos, &dir);
+      dist = stoi(str, len, &pos, &dir);
     ++i;
     switch (dir) {
     case 'R':
