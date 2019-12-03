@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
   assert(argc > 1);
 
   FILE *f;
-  const int size = 512;
+  const int size = 2048;
   char str[size];
   int grid[512] = {0};
   f = fopen(argv[1], "r");
