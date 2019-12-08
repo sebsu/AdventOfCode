@@ -19,7 +19,7 @@ int stoi(char *str, size_t len, size_t *pos, char *dir) {
   int out = 0;
   *dir = str[*pos];
   *pos += 1;
-  for (int i = *pos; (str[i] != ',') && (i!=len); ++i) {
+  for (size_t i = *pos; (str[i] != ',') && (i!=len); ++i) {
     out = (out * 10) + (str[i] - 48);
     *pos = i + 1;
   }
@@ -95,6 +95,15 @@ struct point find_intersect(struct line l1, struct line l2) {
   return p;
 }
 
+/* Manhattan distance */
+int man_dist(struct point p1, struct point p2) {
+    return abs(p1.x - p2.x) + abs(p1.y - p2.y);
+}
+
+int length(struct line l) {
+    return man_dist(l.s, l.e);
+}
+
 int main(int argc, char **argv) {
   assert(argc > 1);
 
@@ -112,23 +121,22 @@ int main(int argc, char **argv) {
 
   unsigned int nearest_dist = 4294967295;
 
+  int dist_l1 = 0;
   for (int i = 0; i < N1; ++i) {
     struct line l1 = {wire1[i], wire1[i + 1]};
-    /* printf("\nl1 (%i,%i)-(%i,%i)\n", l1.s.x, l1.s.y, l1.e.x, l1.e.y); */
+    int dist_l2 = 0;
     for (int j = 0; j < N2; ++j) {
       struct line l2 = {wire2[j], wire2[j + 1]};
-      /* printf("l2 (%i,%i)-(%i,%i)\n", l2.s.x, l2.s.y, l2.e.x, l2.e.y); */
       if (is_crossing(l1, l2)) {
         struct point p = find_intersect(l1, l2);
-        unsigned int dist = abs(p.x) + abs(p.y);
-        /* printf(" p (%i,%i)\n", p.x, p.y); */
+        unsigned int dist = dist_l1 + dist_l2 + man_dist(p, wire1[i]) + man_dist(p, wire2[j]);
         if (dist < nearest_dist) {
-          /* printf("near:\n  l1 (%i,%i)-(%i,%i)\n", l1.s.x, l1.s.y, l1.e.x, l1.e.y); */
-          /* printf("  l2 (%i,%i)-(%i,%i)\n\n", l2.s.x, l2.s.y, l2.e.x, l2.e.y); */
           nearest_dist = dist;
         }
       }
+      dist_l2 += length(l2);
     }
+    dist_l1 += length(l1);
   }
 
   fclose(f);
