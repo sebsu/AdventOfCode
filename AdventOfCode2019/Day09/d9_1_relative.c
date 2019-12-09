@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SIZE 4096
+#define SIZE 16384
 
 size_t N_OP;
 
@@ -75,8 +75,8 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
       param1 = with_mode(mode1, param1, rel_base, prog);
       param2 = with_mode(mode2, param2, rel_base, prog);
       prog[param3] = param1 + param2; /* Execute op */
-      /* printf("1. Sum: %i + %i = %i, in addr %i\n", param1, param2,
-       * prog[param3], param3); */
+      printf("1. Sum: %lli + %lli = %lli, in addr %lli\n", param1, param2,
+             prog[param3], param3);
       break;
     case 2:                    /* Multiplication */
       param1 = prog[(*pos)++]; /* Input var 1 */
@@ -86,14 +86,14 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
       param2 = with_mode(mode2, param2, rel_base, prog);
       /* param3 = (mode3) ? param3 : prog[param3]; */
       prog[param3] = param1 * param2; /* Execute op */
-      /* printf("2. Product: %lli * %lli = %lli, in addr %lli\n", param1,
-       * param2, */
-      /*        prog[param3], param3); */
+      printf("2. Product: %lli * %lli = %lli, in addr %lli\n", param1, param2,
+             prog[param3], param3);
       break;
     case 3:                    /* Save input */
       param1 = prog[(*pos)++]; /* Output var */
+      param1 = with_mode(mode1, param1, rel_base, prog);
       param2 = *var;
-      /* printf("3. Saved %i to addr %i\n", param2, param1); */
+      printf("3. Saved %lli to addr %lli\n", param2, param1);
       prog[param1] = param2; /* Execute op */
       break;
     case 4:                    /* Print input */
@@ -107,8 +107,8 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
       param2 = prog[(*pos)++]; /* Addr */
       param1 = with_mode(mode1, param1, rel_base, prog);
       param2 = with_mode(mode2, param2, rel_base, prog);
-      /* printf("5. If %i != '0' jump from addr %i to addr %i\n", param1, *pos,
-       * param2); */
+      printf("5. If %lli != '0' jump from addr %i to addr %lli\n", param1, *pos,
+             param2);
       *pos = (param1 != 0) ? param2 : *pos; /* Execute op */
       break;
     case 6:                    /* Jump if false */
@@ -116,8 +116,8 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
       param2 = prog[(*pos)++]; /* Addr */
       param1 = with_mode(mode1, param1, rel_base, prog);
       param2 = with_mode(mode2, param2, rel_base, prog);
-      /* printf("6. If %i == '0' jump from addr %i to addr %i\n", param1, *pos,
-       * param2); */
+      printf("6. If %lli == '0' jump from addr %i to addr %lli\n", param1, *pos,
+             param2);
       *pos = (param1 == 0) ? param2 : *pos; /* Execute op */
       break;
     case 7:                    /* Store if less than */
@@ -127,9 +127,9 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
       param1 = with_mode(mode1, param1, rel_base, prog);
       param2 = with_mode(mode2, param2, rel_base, prog);
       /* param3 = (mode3) ? param3 : prog[param3]; */
-      /* printf("7. If %i < %i save 1 to addr %i\n", param1, param2, param3); */
+      printf("7. If %lli < %lli save 1 to addr %lli\n", param1, param2, param3);
       prog[param3] = (param1 < param2) ? 1 : 0; /* Execute op */
-      /* printf("7saved: %i to %i\n", prog[param3], param3); */
+      printf("7saved: %lli to %lli\n", prog[param3], param3);
       break;
     case 8:                    /* Store if eq */
       param1 = prog[(*pos)++]; /* Var 1 */
@@ -138,10 +138,10 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
       param1 = with_mode(mode1, param1, rel_base, prog);
       param2 = with_mode(mode2, param2, rel_base, prog);
       /* param3 = (mode3) ? param3 : prog[param3]; */
-      /* printf("8. If %i == %i save 1 to addr %i\n", param1, param2, param3);
-       */
+      printf("8. If %lli == %lli save 1 to addr %lli\n", param1, param2,
+             param3);
       prog[param3] = (param1 == param2) ? 1 : 0; /* Execute op */
-      /* printf("8saved: %i to %i\n", prog[param3], param3); */
+      printf("8saved: %lli to %lli\n", prog[param3], param3);
       break;
     case 9:                    /* Set relative base */
       param1 = prog[(*pos)++]; /* Var 1 */
@@ -153,10 +153,10 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
   return true;
 }
 
-void print_array(int in[N_OP]) {
+void print_array(long long int in[N_OP]) {
   printf("\nProgram: ");
   for (size_t i = 0; i < N_OP; ++i) {
-    printf("%i,", in[i]);
+    printf("%lli,", in[i]);
   }
   printf("\n");
 }
