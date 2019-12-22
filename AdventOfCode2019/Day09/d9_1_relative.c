@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SIZE 16384
+#define SIZE 65536
 
 size_t N_OP;
 
@@ -35,17 +35,16 @@ void read_prog(char *str, long long int *prog) {
   N_OP = i;
 }
 
-long long int with_mode(int mode, long long int param, int rel_base,
-                        long long int *prog) {
+long long int with_mode(int mode, long long int param, int rel_base, int pos) {
   switch (mode) {
   case 0:
-    return prog[param];
-  case 1:
     return param;
+  case 1:
+    return pos;
   case 2:
-    return prog[rel_base + param];
+    return rel_base + param;
   default:
-    return prog[param];
+    return param;
   }
 }
 
@@ -54,13 +53,13 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
   while (prog[*pos] != 99) {
     int mode1 = 0;
     int mode2 = 0;
-    /* int mode3 = 0; */
+    int mode3 = 0;
     int op = prog[(*pos)++];
     printf("OP: %i, addr: %i\n", op, *pos);
     if (op > 10) {
       mode1 = (int)(floor(op / 100)) % 10 % 3;
       mode2 = (int)(floor(op / 1000)) % 10 % 3;
-      /* mode3 = (int)floor(op / 10000) % 2; */ /* Not used */
+      mode3 = (int)(floor(op / 10000)) % 10 % 3;
       op = op % 10;
     }
     printf("  OP: %i, addr: %i, modes: %i, %i\n", op, *pos, mode1, mode2);
@@ -69,85 +68,90 @@ bool run_prog(long long int *prog, long long int *var, int *pos) {
     long long int param3;
     switch (op) {
     case 1:                    /* Addition */
-      param1 = prog[(*pos)++]; /* Input var 1 */
-      param2 = prog[(*pos)++]; /* Input var 2 */
-      param3 = prog[(*pos)++]; /* Output var */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      param2 = with_mode(mode2, param2, rel_base, prog);
-      prog[param3] = param1 + param2; /* Execute op */
+      param1 = prog[(*pos)]; /* Input var 1 */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      param2 = prog[(*pos)]; /* Input var 2 */
+      param2 = with_mode(mode2, param2, rel_base, (*pos)++);
+      param3 = prog[(*pos)]; /* Output var */
+      param3 = with_mode(mode3, param3, rel_base, (*pos)++);
+      prog[param3] = prog[param1] + prog[param2]; /* Execute op */
       printf("1. Sum: %lli + %lli = %lli, in addr %lli\n", param1, param2,
              prog[param3], param3);
       break;
     case 2:                    /* Multiplication */
-      param1 = prog[(*pos)++]; /* Input var 1 */
-      param2 = prog[(*pos)++]; /* Input var 2 */
-      param3 = prog[(*pos)++]; /* Output var */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      param2 = with_mode(mode2, param2, rel_base, prog);
-      /* param3 = (mode3) ? param3 : prog[param3]; */
-      prog[param3] = param1 * param2; /* Execute op */
+      param1 = prog[(*pos)]; /* Input var 1 */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      param2 = prog[(*pos)]; /* Input var 2 */
+      param2 = with_mode(mode2, param2, rel_base, (*pos)++);
+      param3 = prog[(*pos)]; /* Output var */
+      param3 = with_mode(mode3, param3, rel_base, (*pos)++);
+      prog[param3] = prog[param1] * prog[param2]; /* Execute op */
       printf("2. Product: %lli * %lli = %lli, in addr %lli\n", param1, param2,
              prog[param3], param3);
       break;
     case 3:                    /* Save input */
-      param1 = prog[(*pos)++]; /* Output var */
-      param1 = with_mode(mode1, param1, rel_base, prog);
+      param1 = prog[(*pos)]; /* Output var */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
       param2 = *var;
-      printf("3. Saved %lli to addr %lli\n", param2, param1);
       prog[param1] = param2; /* Execute op */
+      printf("3. Saved %lli to addr %lli\n", param2, param1); /* Execute op */
       break;
     case 4:                    /* Print input */
-      param1 = prog[(*pos)++]; /* Output var */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      printf(" 4. PrintOP: %lli\n", param1); /* Execute op */
+      param1 = prog[(*pos)]; /* Output var */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      printf(" 4. PrintOP: %lli\n", prog[param1]); /* Execute op */
       *var = param1;
       return false;
     case 5:                    /* Jump if true */
-      param1 = prog[(*pos)++]; /* Flag */
-      param2 = prog[(*pos)++]; /* Addr */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      param2 = with_mode(mode2, param2, rel_base, prog);
+      param1 = prog[(*pos)]; /* Flag */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      param2 = prog[(*pos)]; /* Addr */
+      param2 = with_mode(mode2, param2, rel_base, (*pos)++);
       printf("5. If %lli != '0' jump from addr %i to addr %lli\n", param1, *pos,
              param2);
-      *pos = (param1 != 0) ? param2 : *pos; /* Execute op */
+      *pos = (prog[param1] != 0) ? prog[param2] : *pos; /* Execute op */
       break;
     case 6:                    /* Jump if false */
-      param1 = prog[(*pos)++]; /* Flag */
-      param2 = prog[(*pos)++]; /* Addr */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      param2 = with_mode(mode2, param2, rel_base, prog);
+      param1 = prog[(*pos)]; /* Flag */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      param2 = prog[(*pos)]; /* Addr */
+      param2 = with_mode(mode2, param2, rel_base, (*pos)++);
       printf("6. If %lli == '0' jump from addr %i to addr %lli\n", param1, *pos,
              param2);
-      *pos = (param1 == 0) ? param2 : *pos; /* Execute op */
+      *pos = (prog[param1] == 0) ? prog[param2] : *pos; /* Execute op */
       break;
     case 7:                    /* Store if less than */
-      param1 = prog[(*pos)++]; /* Var 1 */
-      param2 = prog[(*pos)++]; /* Var 2 */
-      param3 = prog[(*pos)++]; /* *Pos */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      param2 = with_mode(mode2, param2, rel_base, prog);
-      /* param3 = (mode3) ? param3 : prog[param3]; */
+      param1 = prog[(*pos)]; /* Var 1 */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      param2 = prog[(*pos)]; /* Var 2 */
+      param2 = with_mode(mode2, param2, rel_base, (*pos)++);
+      param3 = prog[(*pos)]; /* *Pos */
+      param3 = with_mode(mode3, param3, rel_base, (*pos)++);
       printf("7. If %lli < %lli save 1 to addr %lli\n", param1, param2, param3);
-      prog[param3] = (param1 < param2) ? 1 : 0; /* Execute op */
+      prog[param3] = (prog[param1] < prog[param2]) ? 1 : 0; /* Execute op */
       printf("7saved: %lli to %lli\n", prog[param3], param3);
       break;
     case 8:                    /* Store if eq */
-      param1 = prog[(*pos)++]; /* Var 1 */
-      param2 = prog[(*pos)++]; /* Var 2 */
-      param3 = prog[(*pos)++]; /* *Pos */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      param2 = with_mode(mode2, param2, rel_base, prog);
-      /* param3 = (mode3) ? param3 : prog[param3]; */
+      param1 = prog[(*pos)]; /* Var 1 */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      param2 = prog[(*pos)]; /* Var 2 */
+      param2 = with_mode(mode2, param2, rel_base, (*pos)++);
+      param3 = prog[(*pos)]; /* *Pos */
+      param3 = with_mode(mode3, param3, rel_base, (*pos)++);
       printf("8. If %lli == %lli save 1 to addr %lli\n", param1, param2,
              param3);
-      prog[param3] = (param1 == param2) ? 1 : 0; /* Execute op */
+      prog[param3] = (prog[param1] == prog[param2]) ? 1 : 0; /* Execute op */
       printf("8saved: %lli to %lli\n", prog[param3], param3);
       break;
     case 9:                    /* Set relative base */
-      param1 = prog[(*pos)++]; /* Var 1 */
-      param1 = with_mode(mode1, param1, rel_base, prog);
-      rel_base += param1; /* Adjust rel_base */
+      param1 = prog[(*pos)]; /* Var 1 */
+      param1 = with_mode(mode1, param1, rel_base, (*pos)++);
+      printf("9. Rel_base was %i", rel_base);
+      rel_base += prog[param1]; /* Adjust rel_base */
+      printf(" and is now %i\n", rel_base);
       break;
+    default:
+        return true;
     }
   }
   return true;
