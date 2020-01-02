@@ -7,15 +7,22 @@
 
 #define SIZE 65536
 
+typedef struct {
+    int pos;
+    double angle;
+    double dist;
+} asteroid;
+
 int WIDTH = 0;
 int HEIGHT = 0;
 
-typedef enum {
-           top = 0,
-           right = 1,
-           bottom = 2,
-           left = 3,
-} edge;
+int get_x(int pos) {
+    return pos % WIDTH;
+}
+
+int get_y(int pos) {
+    return (int)(floor(pos/WIDTH));
+}
 
 /* Find greatest common divisor */
 int find_gcd(int a, int b) {
@@ -36,10 +43,10 @@ int find_gcd(int a, int b) {
 }
 
 void find_step(int pos_a, int pos_b, int *x, int *y) {
-    int x1 = pos_a % WIDTH;
-    int x2 = pos_b % WIDTH;
-    int y1 = (int)(floor(pos_a/WIDTH));
-    int y2 = (int)(floor(pos_b/WIDTH));
+    int x1 = get_x(pos_a);
+    int x2 = get_x(pos_b);
+    int y1 = get_y(pos_a);
+    int y2 = get_y(pos_b);
     int dx = x2 - x1;
     int dy = y2 - y1;
     int gcd = find_gcd(dx, dy);
@@ -49,8 +56,8 @@ void find_step(int pos_a, int pos_b, int *x, int *y) {
 }
 
 int step(int orig, int dx, int dy, int *map) {
-    int x = orig % WIDTH;
-    int y = (int)(floor(orig/WIDTH));
+    int x = get_x(orig);
+    int y = get_y(orig);
     /* printf("\ndx %i dy %i, x %i, y %i\n", dx, dy, x+dx, y+dy); */
     while ((0 <= x+dx && x+dx < WIDTH) &&
            (0 <= y+dy && y+dy < HEIGHT)) {
@@ -64,54 +71,67 @@ int step(int orig, int dx, int dy, int *map) {
     return orig;
 }
 
-void find_triangle(int a, int b, int c, edge side) {
-    int xa = a % WIDTH;
-    int ya = (int)(floor(a/WIDTH));
-    int xb = b % WIDTH;
-    int yb = (int)(floor(b/WIDTH));
-    int xc = c % WIDTH;
-    int yc = (int)(floor(c/WIDTH));
-    switch (side) {
-    case top:
-        return;
-    case right:
-        return;
-    case bottom:
-        return;
-    case left:
-        return;
+double get_dist(int a, int b) {
+    int xa = get_x(a);
+    int ya = get_y(a);
+    int xb = get_x(b);
+    int yb = get_y(b);
+    int dx = abs(xa - xb);
+    int dy = abs(ya - yb);
+    return sqrt(dx*dx + dy*dy);
 }
 
-int tick(int prev) {
-    int x = prev % WIDTH;
-    int y = (int)(floor(prev/WIDTH));
-    if (y==0 && (x+1)<WIDTH) {  /* TOP */
-        /* printf("TOP prev %i (%i,%i), next %i\n", prev, x, y, prev+1); */
-        return prev+1;
-    } else if (x==(WIDTH-1) && (y+1)<HEIGHT) { /* RIGHT */
-        /* printf("RIGHT prev %i (%i,%i), next %i\n", prev, x, y, prev+WIDTH); */
-        return prev+WIDTH;
-    } else if (y==(HEIGHT-1) && (x-1)>0) { /* BOTTOM */
-        /* printf("BOT prev %i (%i,%i), next %i\n", prev, x, y, prev-1); */
-        return prev-1;
-    } else {                    /* LEFT */
-        /* printf("LEFT prev %i (%i,%i), next %i\n", prev, x, y, prev-WIDTH); */
-        return prev-WIDTH;
+double get_angle(int orig, int target) {
+    int xo = get_x(orig);
+    int yo = get_y(orig);
+    int xt = get_x(target);
+    int yt = get_y(target);
+    if (xt >= xo && yt < yo) { /* Top right */
+        return atan2(xt-xo, yo-yt);
+    } else if (xt > xo && yt >= yo) { /* Bottom right */
+        return atan2(yt-yo, xt-xo) + M_PI/2.0;
+    } else if (xt <= xo && yt > yo) { /* Bottom left */
+        return atan2(xo-xt, yt-yo) + M_PI;
+    } else {                    /* Top left */
+        return atan2(yo-yt, xo-xt) + 3.0*M_PI/2.0;
     }
 }
+
+bool double_eq(double a, double b) {
+    int epsilon = 100000;
+    int a_i = (int)floor(a*epsilon);
+    int b_i = (int)floor(b*epsilon);
+    return a_i == b_i;
+}
+
+int compare(const void *elem1, const void *elem2) {
+    asteroid a = *((asteroid *)elem1);
+    asteroid b = *((asteroid *)elem2);
+    if (double_eq(a.angle, b.angle)) {
+        if (a.dist < b.dist) {
+            return -1;
+        }
+    }
+    if (a.angle < b.angle) {
+        return -1;
+    }
+    return 1;
+}
+
 
 int main(int argc, char **argv) {
     assert(argc > 1);
 
     FILE *f;
     f = fopen(argv[1], "r");
-
+    
     char str[SIZE];
     int map[SIZE] = {0};
     int asts[SIZE] = {0};
     int n_ast = 0;
     int max_in_line = 0;
-    int best_pos = 0;
+    asteroid asts_sorted[SIZE];
+    int orig = 0;
 
     fgets(str, SIZE, f);
     WIDTH = strlen(str)-1;
@@ -141,60 +161,69 @@ int main(int argc, char **argv) {
                 ++in_line;
             }
         }
-        /* printf("Me %i hit %i asts\n", asts[i], in_line); */
-        if (in_line > max_in_line) {
+        /* printf("Me %i (%i,%i) hit %i asts\n", asts[i], get_x(asts[i]), get_y(asts[i]), in_line); */
+        if (in_line >= max_in_line) {
             max_in_line = in_line;
-            best_pos = i;
+            orig = asts[i];
         }
     }
 
-    int xb = best_pos%WIDTH;
-    int yb = (int)(floor(best_pos/WIDTH));
-    printf("h %i w %i (%i,%i)\n", HEIGHT, WIDTH, xb, yb);
+    /* orig=59; */
+    /* map[orig] = 3; */
+    /* printf("orig: %i %i\n", get_x(orig), get_y(orig)); */
 
-    for (int y=0; y<HEIGHT; ++y) {
-        for (int x=0; x<WIDTH; ++x) {
-            printf("%i", map[y*WIDTH+x]);
-        }
-        printf("\n");
-    }
-    
-        printf("\n\n");
-
-    int n_hit = 0;
-    int bet_ast = 130;
-    int target = best_pos % WIDTH;
-    while (n_hit != bet_ast) {
-        target = tick(target);
-        if (target==best_pos) continue;
-        int dx, dy;
-        find_step(best_pos, target, &dx, &dy);
-        int hit = step(best_pos, dx, dy, map);
-        /* printf("  Me %i hit %i\n", best_pos, hit); */
-        if (hit != best_pos) {
-            /* printf("nhit %i\n", n_hit); */
-            ++n_hit;
-            map[hit] = 0;
-        }
+    for (int i=0; i<n_ast; ++i) {
+        if (asts[i] == orig) continue;
+        asts_sorted[i].pos = asts[i];
+        asts_sorted[i].angle = get_angle(orig, asts[i]);
+        asts_sorted[i].dist = get_dist(orig, asts[i]);
     }
 
-    int xf = target%WIDTH;
-    int yf = (int)(floor(target/WIDTH));
+    qsort(asts_sorted, n_ast, sizeof(asteroid), compare);
 
-    
-    for (int y=0; y<HEIGHT; ++y) {
-        for (int x=0; x<WIDTH; ++x) {
-            printf("%i", map[y*WIDTH+x]);
+    int n_destroyed = 1;
+    int target = -1;
+    int goal = 200;
+    while (n_destroyed < goal) {
+        for (int i=1; i<n_ast; ++i) {
+            /* printf("%i %f\n", n_destroyed, asts_sorted[i].angle); */
+            if (double_eq(asts_sorted[i-1].angle, asts_sorted[i].angle)) continue;
+            ++n_destroyed;
+
+    /*         map[asts_sorted[i].pos] = n_destroyed%10; */
+    /* for (int y=0; y<HEIGHT; ++y) { */
+    /*     for (int x=0; x<WIDTH; ++x) { */
+    /*         printf("%i", map[y*WIDTH+x]); */
+    /*     } */
+    /*     printf("\n"); */
+    /* } */
+    /* printf("\n"); */
+
+            if (n_destroyed == goal) {
+                target = asts_sorted[i].pos;
+                break;
+            }
         }
-        printf("\n");
+        qsort(asts_sorted, n_ast, sizeof(asteroid), compare);
+        n_ast -= n_destroyed;
     }
-    
+
+    int result = get_x(target)*100 + get_y(target);
+
+    /* Print map */
+    /* for (int y=0; y<HEIGHT; ++y) { */
+    /*     for (int x=0; x<WIDTH; ++x) { */
+    /*         printf("%i", map[y*WIDTH+x]); */
+    /*     } */
+    /*     printf("\n"); */
+    /* } */
+
     /* for (int i=0; i<n_ast; ++i) { */
     /*     printf("%i, ", asts[i]); */
     /* } */
     
     fclose(f);
-    printf("\nResult: %i %i, %i\n%i\n", WIDTH, HEIGHT, n_ast, xf*100+yf);
+    printf("\nResult: %i %i, %i\n%i\n%i\n", n_destroyed, result, n_ast, max_in_line, target);
 
     return 0;
 }
