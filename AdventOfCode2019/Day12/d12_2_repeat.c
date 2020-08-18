@@ -7,7 +7,6 @@
 #include <string.h>
 
 #define STR_SIZE 65536
-#define SIZE 131072
 #define N_MOONS 4
 #define N_AXIS 3
 
@@ -20,16 +19,19 @@ struct moon {
     struct axis a[N_AXIS];
 };
 
+/* Compare the position and velocity of two points on an axis, true if same. */
 bool cmp_axis(struct axis* a, struct axis* b){
     return (a->p == b->p) && (a->v == b->v);
 }
 
+/* Compare the position and velocity of two moons, true if same. */
 bool cmp_moon(struct moon* a, struct moon* b){
-    return cmp_axis(&a->a[0], &b->a[0])
-        && cmp_axis(&a->a[1], &b->a[1])
-        && cmp_axis(&a->a[2], &b->a[2]);
+    return cmp_axis(&a->a[0], &b->a[0])  /* I know I can make a loop. */
+        && cmp_axis(&a->a[1], &b->a[1])  /* I don't want to. */
+        && cmp_axis(&a->a[2], &b->a[2]); /* Fuck you. */
 }
 
+/* String to int. */
 int stoi(char *str, size_t *pos) {
     int out = 0;
     int sign = 1;
@@ -45,6 +47,7 @@ int stoi(char *str, size_t *pos) {
     return sign * out;
 }
 
+/* Find the integer in a string. */
 int extract_int(char *str, size_t *pos) {
     while (str[*pos] != '=') {
         ++(*pos);
@@ -53,6 +56,7 @@ int extract_int(char *str, size_t *pos) {
     return stoi(str, pos);
 }
 
+/* Update the x/y/z-axis on moons a and b based on each others' gravity. */
 void update_axis(struct axis* a, struct axis* b) {
     if (a->p < b->p) {
         ++(a->v);
@@ -63,8 +67,8 @@ void update_axis(struct axis* a, struct axis* b) {
     }
 }
 
+/* Update the velocity of all moons. */
 void update_vel(struct moon m[N_MOONS]) {
-    /* GRAVITY */
     for (int i=0; i<N_MOONS; ++i) {
         for (int j=i+1; j<N_MOONS; ++j) {
             for (int k=0; k<N_AXIS; ++k) {
@@ -74,8 +78,8 @@ void update_vel(struct moon m[N_MOONS]) {
     }
 }
 
+/* Update the position of all moons based on their velocity. */
 void update_pos(struct moon m[N_MOONS]) {
-    /* UPDATE POS */
     for (int i=0; i<N_MOONS; ++i) {
         for (int j=0; j<N_AXIS; ++j) {
             m[i].a[j].p += m[i].a[j].v;
@@ -83,16 +87,13 @@ void update_pos(struct moon m[N_MOONS]) {
     }
 }
 
-void save_cmp_state(struct moon m[N_MOONS], uint64_t t,
-                    struct moon origin[N_MOONS],
-                    uint64_t* l, int n) {
+/* Compare the current state with the initial state on axis n.  */
+bool cmp_state(struct moon m[N_MOONS], struct moon origin[N_MOONS], int n) {
     bool same = true;
     for (int i=0; i<N_MOONS; ++i) {
         same = same && cmp_axis(&m[i].a[n], &origin[i].a[n]);
     }
-    if (same) {
-        *l = t;
-    }
+    return same;
 }
 
 /* Least common multiple
@@ -122,14 +123,6 @@ void print_moons(struct moon m[N_MOONS]) {
     }    
 }
 
-void print_axis(struct axis a[N_MOONS][SIZE], uint64_t t) {
-    for (int i=0; i<N_MOONS; ++i) {
-        printf("Moon %i history\n", i);
-        printf("p=%4i v=%4i\n", a[i][t].p, a[i][t].v);
-        printf("\n");
-    }
-}
-
 int main(int argc, char **argv) {
     assert(argc > 1);
 
@@ -148,9 +141,9 @@ int main(int argc, char **argv) {
         moons[i].a[2].p = extract_int(str, &p);
     }
 
-    printf("After 0 steps:\n");
-    print_moons(moons);
-    printf("\n");
+    /* printf("After 0 steps:\n"); */
+    /* print_moons(moons); */
+    /* printf("\n"); */
 
     uint64_t loops[N_AXIS] = {0};
     struct moon init_moon[N_MOONS] = {0};
@@ -161,33 +154,29 @@ int main(int argc, char **argv) {
     }
     
     for (int axis=0; axis<N_AXIS; ++axis) {
-        /* struct axis states[N_MOONS][SIZE] = {0}; */
-        uint64_t loop = 0;
         uint64_t i = 0;
-        save_cmp_state(moons, i, init_moon, &loop, axis);
+        uint64_t loop = 0;
         while (!loop) {
             update_vel(moons);
             update_pos(moons);
             ++i;
-            save_cmp_state(moons, i, init_moon, &loop, axis);
+            loop = cmp_state(moons, init_moon, axis) ? i : 0;
         }
+        /* Save the amount of iterations it took to reach the initial state. */
         loops[axis] = loop;
-        printf("After %lu steps:\n", i);
-        print_moons(moons);
-        printf("\n");
+        
+        /* printf("After %lu steps:\n", i); */
+        /* print_moons(moons); */
+        /* printf("\n"); */
+        
+        /* Reset for next axis */
+        for (int i=0; i<N_MOONS; ++i) {
+            for (int j=0; j<N_AXIS; ++j) {
+                moons[i].a[j] = init_moon[i].a[j];
+            }
+        }
     }
-    
-    /* save_cmp_state(moons, i, */
-    /*                states_x, states_y, states_z, */
-    /*                &loop_x, &loop_y, &loop_z); */
-    /* printf("X\n"); */
-    /* print_axis(states_x, 2771); */
-    /* printf("Y\n"); */
-    /* print_axis(states_y, 2771); */
-    /* printf("Z\n"); */
-    /* print_axis(states_z, 2771); */
 
-    
     uint64_t res = lcm(loops[0] , loops[1], loops[2]);
     fclose(f);
     printf("\nResult: %lu,%lu,%lu, %lu, %lu\n", loops[0], loops[1], loops[2],
