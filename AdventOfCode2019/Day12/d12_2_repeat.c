@@ -84,20 +84,14 @@ void update_pos(struct moon m[N_MOONS]) {
 }
 
 void save_cmp_state(struct moon m[N_MOONS], uint64_t t,
-                    struct axis a[N_MOONS][SIZE],
+                    struct moon origin[N_MOONS],
                     uint64_t* l, int n) {
-    for (uint64_t j=0; j<t; ++j) {
-            bool same = true;
-            for (int i=0; i<N_MOONS; ++i) {
-                same = same && cmp_axis(&m[i].a[n], &a[i][j]);
-            }
-            if (same) {
-                *l = t;
-                break;
-            }
-    }
+    bool same = true;
     for (int i=0; i<N_MOONS; ++i) {
-        a[i][t] = m[i].a[n];
+        same = same && cmp_axis(&m[i].a[n], &origin[i].a[n]);
+    }
+    if (same) {
+        *l = t;
     }
 }
 
@@ -159,19 +153,26 @@ int main(int argc, char **argv) {
     printf("\n");
 
     uint64_t loops[N_AXIS] = {0};
+    struct moon init_moon[N_MOONS] = {0};
+    for (int i=0; i<N_MOONS; ++i) {
+        for (int j=0; j<N_AXIS; ++j) {
+            init_moon[i].a[j] = moons[i].a[j];
+        }
+    }
     
     for (int axis=0; axis<N_AXIS; ++axis) {
-        struct axis states[N_MOONS][SIZE] = {0};
+        /* struct axis states[N_MOONS][SIZE] = {0}; */
         uint64_t loop = 0;
         uint64_t i = 0;
+        save_cmp_state(moons, i, init_moon, &loop, axis);
         while (!loop) {
-            save_cmp_state(moons, i, states, &loop, axis);
             update_vel(moons);
             update_pos(moons);
             ++i;
+            save_cmp_state(moons, i, init_moon, &loop, axis);
         }
         loops[axis] = loop;
-        printf("After %lu steps:\n", i-1);
+        printf("After %lu steps:\n", i);
         print_moons(moons);
         printf("\n");
     }
