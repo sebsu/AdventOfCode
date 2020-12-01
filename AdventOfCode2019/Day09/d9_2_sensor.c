@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 
   read_prog(str, prog);
 
-  long long int var = 1;
+  long long int var = 2;
   int pos = 0;
   bool done = false;
 
