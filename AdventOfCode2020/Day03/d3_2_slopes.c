@@ -9,6 +9,21 @@
 #define STR_SIZE 8192
 #define INPUT_SIZE 350
 
+struct Map {
+  int64_t trees[INPUT_SIZE];
+  int n_rows;
+  int width;
+};
+
+int trees_hit(struct Map *map, int dx, int dy) {
+  int n_trees = 0;
+  for (int i = 0; i * dy < map->n_rows; ++i) {
+    int n_shift = map->width - ((i * dx) % map->width) - 1;
+    n_trees += (map->trees[i * dy] & (1 << n_shift)) > 0;
+  }
+  return n_trees;
+}
+
 int main(int argc, char **argv) {
   assert(argc > 1);
 
@@ -16,10 +31,8 @@ int main(int argc, char **argv) {
   f = fopen(argv[1], "r");
 
   char str[STR_SIZE];
-  int64_t tree_map[INPUT_SIZE] = {0}; // Bit map.
+  struct Map map;
   int64_t result = 1;
-  int n_rows = 0;
-  int width = 0;
   while (fgets(str, STR_SIZE, f) != NULL) {
     size_t pos = 0;
     int64_t row = 0;
@@ -30,30 +43,17 @@ int main(int argc, char **argv) {
       }
       ++pos;
     }
-    tree_map[n_rows] = row;
-    ++n_rows;
-    width = pos;
+    map.trees[map.n_rows] = row;
+    ++map.n_rows;
+    map.width = pos;
   }
-  printf("Rows: %i\n", n_rows);
-  printf("Width: %i\n", width);
+  printf("Rows: %i\n", map.n_rows);
+  printf("Width: %i\n", map.width);
 
-  int slope_result = 0;
-  for (int step_right = 1; step_right < 8; step_right += 2) {
-    slope_result = 0;
-    for (int i = 0; i < n_rows; ++i) {
-      int n_shift = width - ((step_right * i) % width) - 1;
-      slope_result += (tree_map[i] & (1 << n_shift)) > 0 ? 1 : 0;
-    }
-    printf("Slope result: %i\n", slope_result);
-    result *= slope_result;
+  for (int x = 1; x < 8; x += 2) {
+    result *= trees_hit(&map, x, 1);
   }
-  slope_result = 0;
-  for (int i = 0; i < n_rows; i += 2) {
-    int n_shift = width - ((i / 2) % width) - 1;
-    slope_result += (tree_map[i] & (1 << n_shift)) > 0 ? 1 : 0;
-  }
-  printf("Slope result: %i\n", slope_result);
-  result *= slope_result;
+  result *= trees_hit(&map, 1, 2);
 
   fclose(f);
   printf("Result: %li\n", result);
