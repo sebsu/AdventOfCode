@@ -49,22 +49,27 @@ void extract_rules(char *rule, int n_rules, Pair *rules) {
 }
 
 int find_valid(Pair *rules, Bag *valid_bags, int n_rules, int n_valid) {
-  for (int i = 0; i < n_rules; ++i) {
-    for (int j = 0; j < RULE_SIZE; ++j) {
+  for (int i = 0; i < n_rules; ++i) {     /* For each rule, */
+    for (int j = 0; j < RULE_SIZE; ++j) { /* check each contained bag. */
       if (strcmp(rules[i].val[j].name, "") == 0) {
         break;
       }
-      for (int k = 0; k < n_valid; ++k) {
-        int exist = 0;
-        for (int l = 0; l < n_valid; ++l) {
-          if (strcmp(rules[i].key, valid_bags[l].name) == 0) {
-            exist = 1;
-            break;
-          }
-        }
-        if (exist == 1) {
+
+      /* If this bag has already been added to the valid bags list, ignore. */
+      int exist = 0;
+      for (int l = 0; l < n_valid; ++l) {
+        if (strcmp(rules[i].key, valid_bags[l].name) == 0) {
+          exist = 1;
           break;
         }
+      }
+      if (exist == 1) {
+        continue;
+      }
+
+      /* If a new bag type, that can include any already valid bag type, */
+      /* is found, add it. */
+      for (int k = 0; k < n_valid; ++k) {
         if (strcmp(rules[i].val[j].name, valid_bags[k].name) == 0) {
           strcpy(valid_bags[n_valid++].name, rules[i].key);
           break;
