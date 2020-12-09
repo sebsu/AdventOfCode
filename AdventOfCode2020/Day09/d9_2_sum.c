@@ -50,20 +50,14 @@ uint64_t find_sum(int start, int end, uint64_t *all) {
   return res;
 }
 
-uint64_t find_min(int start, int end, uint64_t *all) {
-  uint64_t res = -1;
+uint64_t sum_min_max(int start, int end, uint64_t *all) {
+  uint64_t min = -1;
+  uint64_t max = 0;
   for (int i = start; i <= end; ++i) {
-    res = (res < all[i]) ? res : all[i];
+    min = (min < all[i]) ? min : all[i];
+    max = (max > all[i]) ? max : all[i];
   }
-  return res;
-}
-
-uint64_t find_max(int start, int end, uint64_t *all) {
-  uint64_t res = 0;
-  for (int i = start; i <= end; ++i) {
-    res = (res > all[i]) ? res : all[i];
-  }
-  return res;
+  return min + max;
 }
 
 uint64_t find_weakness(uint64_t val, int size, uint64_t *all) {
@@ -71,7 +65,7 @@ uint64_t find_weakness(uint64_t val, int size, uint64_t *all) {
     for (int j = i + 1; j < size; ++j) {
       uint64_t sum = find_sum(i, j, all);
       if (sum == val) {
-        return find_min(i, j, all) + find_max(i, j, all);
+        return sum_min_max(i, j, all);
       }
     }
   }
@@ -112,6 +106,19 @@ int main(int argc, char **argv) {
     i = (i + 1) % PRE_SIZE;
     ++j;
   }
+
+  /* I am lucky that the correct set is listed before the invalid number.
+   * If that hadn't been the case, this would not have worked.
+   * This can be solved by continue to read and add to all_numbers after the
+   * invalid value has been found. */
+  /*
+  while (fgets(str, STR_SIZE, f) != NULL) {
+    size_t p = 0;
+    uint64_t val = stoi(str, &p);
+    all_numbers[j] = val;
+    ++j;
+  }
+  */
 
   result = find_weakness(invalid, j, all_numbers);
 
