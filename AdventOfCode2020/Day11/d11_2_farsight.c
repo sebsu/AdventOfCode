@@ -10,6 +10,28 @@
 #define STR_SIZE 8192
 #define INPUT_SIZE 128
 
+int get_step(int direction, int width) {
+  switch (direction) {
+  case 0: /* Up left */
+    return -width - 1;
+  case 1: /* Up */
+    return -width;
+  case 2: /* Up right */
+    return -width + 1;
+  case 3: /* Right */
+    return 1;
+  case 4: /* Down right */
+    return width + 1;
+  case 5: /* Down */
+    return width;
+  case 6: /* Down left */
+    return width - 1;
+  case 7: /* Left */
+    return -1;
+  }
+  return 0;
+}
+
 int look(int step, int pos, int width, int height, char *seats) {
   int ul = (step == -1) || (step == -width - 1) || (step == -width);
   int ur = (step == 1) || (step == -width + 1) || (step == -width);
@@ -18,9 +40,10 @@ int look(int step, int pos, int width, int height, char *seats) {
   for (int i = 1; /* All bounds checked inside. */; ++i) {
     int p = pos + i * step;
     /* Check bounds. */
-    if (((ul || dl) && ((p % width) > (pos % width))) ||
-        ((ur || dr) && ((p % width) < (pos % width))) ||
-        ((dl || dr) && (p >= width * height)) || ((ul || ur) && (p < 0))) {
+    if (((ul || dl) && ((p % width) > (pos % width))) || /* Left */
+        ((ur || dr) && ((p % width) < (pos % width))) || /* Right */
+        ((dl || dr) && (p >= width * height)) ||         /* Down */
+        ((ul || ur) && (p < 0))) {                       /* Up */
       return 1;
     }
     if (seats[p] == '.') {
@@ -82,30 +105,15 @@ int update_seats(char *seats, int width, int height) {
     }
 
     uint8_t free_count = 0;
-    int step = -width - 1;
-    free_count += /* Top left */
-        (surrounding[0] == 'L') ? 1 : look(step, i, width, height, old);
-    step = -width;
-    free_count += /* Top */
-        (surrounding[1] == 'L') ? 1 : look(step, i, width, height, old);
-    step = -width + 1;
-    free_count += /* Top right */
-        (surrounding[2] == 'L') ? 1 : look(step, i, width, height, old);
-    step = 1;
-    free_count += /* Right */
-        (surrounding[3] == 'L') ? 1 : look(step, i, width, height, seats);
-    step = width + 1;
-    free_count += /* Bottom right */
-        (surrounding[4] == 'L') ? 1 : look(step, i, width, height, seats);
-    step = width;
-    free_count += /* Bottom */
-        (surrounding[5] == 'L') ? 1 : look(step, i, width, height, seats);
-    step = width - 1;
-    free_count += /* Bottom left */
-        (surrounding[6] == 'L') ? 1 : look(step, i, width, height, seats);
-    step = -1;
-    free_count += /* Left */
-        (surrounding[7] == 'L') ? 1 : look(step, i, width, height, old);
+    for (int s = 0; s < 8; ++s) {
+      int step = get_step(s, width);
+      char *seating = seats;
+      if (step < 0) {
+        seating = old;
+      }
+      free_count +=
+          (surrounding[s] == 'L') ? 1 : look(step, i, width, height, seating);
+    }
 
     if ((seats[i] == 'L') && (free_count == 8)) {
       seats[i] = '#';
@@ -151,6 +159,7 @@ int main(int argc, char **argv) {
   }
 
   printf("\nDone\n");
+  /* Sum occupied. */
   for (int i = 0; i < width * height; ++i) {
     result += (seats[i] == '#');
   }
