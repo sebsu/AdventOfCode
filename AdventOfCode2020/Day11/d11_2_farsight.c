@@ -59,7 +59,6 @@ int look(int step, int pos, int width, int height, char *seats) {
 
 int update_seats(char *seats, int width, int height) {
   char old[INPUT_SIZE * INPUT_SIZE];
-  char surrounding[8] = {'#'};
   int change = 0;
 
   /*
@@ -79,31 +78,6 @@ int update_seats(char *seats, int width, int height) {
       continue;
     }
 
-    if ((i % width) == 0) {
-      /* Left edge */
-      surrounding[0] = 'L';
-      surrounding[6] = 'L';
-      surrounding[7] = 'L';
-    }
-    if (i < width) {
-      /* Top edge */
-      surrounding[0] = 'L';
-      surrounding[1] = 'L';
-      surrounding[2] = 'L';
-    }
-    if ((i % width) == (width - 1)) {
-      /* Right edge */
-      surrounding[2] = 'L';
-      surrounding[3] = 'L';
-      surrounding[4] = 'L';
-    }
-    if (i >= (width * (height - 1))) {
-      /* Bottom edge */
-      surrounding[4] = 'L';
-      surrounding[5] = 'L';
-      surrounding[6] = 'L';
-    }
-
     uint8_t free_count = 0;
     for (int s = 0; s < 8; ++s) {
       int step = get_step(s, width);
@@ -111,8 +85,7 @@ int update_seats(char *seats, int width, int height) {
       if (step < 0) {
         seating = old;
       }
-      free_count +=
-          (surrounding[s] == 'L') ? 1 : look(step, i, width, height, seating);
+      free_count += look(step, i, width, height, seating);
     }
 
     if ((seats[i] == 'L') && (free_count == 8)) {
@@ -121,10 +94,6 @@ int update_seats(char *seats, int width, int height) {
     } else if ((seats[i] == '#') && ((8 - free_count) >= 5)) {
       seats[i] = 'L';
       ++change;
-    }
-
-    for (int s = 0; s < 8; ++s) {
-      surrounding[s] = '#';
     }
   }
 
