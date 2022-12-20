@@ -45,9 +45,16 @@ int main(int argc, char **argv) {
     }
     ++p;
     int unique = 0;
+    /* // Original implementation.
     while (bitmask > 0) {
       unique += bitmask & 1;
       bitmask >>= 1;
+    }
+    */
+    // Kernighan implementation.
+    while (bitmask != 0) {
+      bitmask = bitmask & (bitmask - 1);
+      ++unique;
     }
     if (unique == MESSAGE) {
       break;
